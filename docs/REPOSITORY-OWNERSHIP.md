@@ -2,7 +2,7 @@
 
 ## Permanent rule
 
-Every component with a dedicated repository keeps that repository as its principal source. `communication-platform-` coordinates architecture and contracts; it does not become a second runtime source.
+Every component with a dedicated repository keeps that repository as its principal source. `communication-platform-` is the **master architecture, ownership, dependency and release-coordination authority**; it does not become a second runtime source for software already owned elsewhere.
 
 | Capability | Principal repository | Owns | Must not own |
 |---|---|---|---|
@@ -16,22 +16,28 @@ Every component with a dedicated repository keeps that repository as its princip
 | SDK/contracts | appolon1908-hue/SDK-repository | OpenAPI/AsyncAPI, generated clients, webhook SDK, connector-kit, n8n nodes, developer tooling | privileged provider execution or secrets |
 | Orchestration | appolon1908-hue/N8N | approved workflow packs, timing/branching/human workflow coordination | direct provider/Odoo/VICIdial/Jasmin/Postal writes |
 | CRM/business state | appolon1908-hue/Odoo | CRM records, leads, campaign business workflows, activities, approved business state | provider delivery engine or cross-system control plane |
-| Architecture/dashboard | appolon1908-hue/communication-platform- | ownership matrix, dashboard design, capability model, release dependency map, cross-repo architecture | runtime implementations already owned elsewhere |
+| Architecture/master coordination | appolon1908-hue/communication-platform- | ownership matrix, canonical API/event catalogue, status model, dashboard specification, integration matrix, dependency graph, cross-repo release checklist | runtime implementations already owned elsewhere |
 | Infrastructure coordination | appolon1908-hue/Infustruction-repo | environment topology, network/storage conventions, shared deployment coordination, backup/restore/DR policy, cross-stack release evidence | duplicating component configuration owned by dedicated repos |
-| Grafana | appolon1908-hue/Codestra-Grafana- | Grafana configuration, provisioning, dashboards, folders, data-source declarations, RBAC policy templates, Grafana-specific tests and release evidence | Prometheus/Loki/Tempo runtime configuration or provider writes |
-| Prometheus | appolon1908-hue/Codestra-Prometheus | Prometheus configuration, scrape policy, recording/alert rules owned by Prometheus, retention/TSDB policy, Prometheus-specific tests and release evidence | Alertmanager routing or Grafana dashboards |
-| Alertmanager | appolon1908-hue/Codestra-Alertmanager | alert routing, grouping, inhibition, silencing policy templates, receivers without secrets, Alertmanager-specific tests and release evidence | metric collection or dashboard ownership |
-| Loki | appolon1908-hue/Codestra-Loki | Loki runtime/configuration, ingestion/storage/retention policy, log tenancy, Loki-specific tests and release evidence | application log instrumentation or Grafana dashboard ownership |
-| OpenTelemetry | appolon1908-hue/Codestra-Telemetry | OpenTelemetry Collector pipelines, receivers/processors/exporters, telemetry propagation conventions, collector tests and release evidence | authoritative application state or backend-specific dashboards |
-| Tempo | appolon1908-hue/Codestra-Tempo | Tempo runtime/configuration, trace ingestion/storage/retention, Tempo-specific tests and release evidence | application instrumentation or metrics/log storage |
-| Superset | appolon1908-hue/Superset | Analytics dashboards, curated dataset definitions, semantic reporting, management reports and Superset release evidence | privileged provider/admin queries or operational alert ownership |
-| Node Exporter | appolon1908-hue/Codestra-Node-Exporter | Host metrics exporter configuration, service definitions and release evidence | application metrics or dashboard ownership |
-| cAdvisor | appolon1908-hue/Codestra-cAdvisor | Container metrics exporter configuration and release evidence | application metrics or dashboard ownership |
-| PostgreSQL Exporter | appolon1908-hue/Codestra-Postgres-Exporter | PostgreSQL exporter configuration and database metric collection policy | database schema ownership or privileged query dashboards |
-| Redis Exporter | appolon1908-hue/Codestra-Redis-Exporter | Redis exporter configuration and metric collection policy | Redis runtime configuration or dashboard ownership |
-| Blackbox Exporter | appolon1908-hue/Codestra-Blackbox-Exporter | Synthetic probe configuration and external endpoint checks | application routing, DNS authority or provider writes |
-| Grafana Alloy | appolon1908-hue/Codestra-Alloy | Local telemetry collection agent configuration for logs, metrics and traces | canonical metric storage or dashboard ownership |
-| OpenBao | appolon1908-hue/Codestra-OpenBao | Secrets, leases, policies, audit telemetry and secret-store release evidence | application business state or committed secret values |
+| Grafana | appolon1908-hue/Codestra-Grafana- | Grafana config/provisioning, dashboards, folders, datasource declarations, Grafana RBAC templates, incident/executive views | Prometheus/Loki/Tempo runtime configuration or business/provider writes |
+| Prometheus | appolon1908-hue/Codestra-Prometheus | scrape config, recording rules, alert rules, retention/TSDB policy, metric-source integration | Alertmanager routing or Grafana dashboard ownership |
+| Alertmanager | appolon1908-hue/Codestra-Alertmanager | grouping, deduplication, inhibition, silence policy, severity routing, Middleware-only alert webhook configuration | metric collection, direct SMS/email/voice/PagerDuty/Slack delivery, Odoo/n8n writes |
+| Loki | appolon1908-hue/Codestra-Loki | Loki runtime/config, ingestion/storage/retention policy, log tenancy, log-query authority | application business state, Grafana dashboard ownership |
+| OpenTelemetry Collector | appolon1908-hue/Codestra-Telemetry | OTLP receivers/processors/exporters, telemetry normalization, collector pipeline config | authoritative application state or dashboard ownership |
+| Tempo | appolon1908-hue/Codestra-Tempo | trace ingestion/storage/retention, trace backend config | application instrumentation or metrics/log storage |
+| Grafana Alloy | appolon1908-hue/Codestra-Alloy | host/container log and telemetry collection profiles, agent-side discovery and forwarding | central metric/log/trace storage, business writes |
+| Node Exporter | appolon1908-hue/Codestra-Node-Exporter | host OS metric exporter source/config ownership | alert routing or application metrics |
+| cAdvisor | appolon1908-hue/Codestra-cAdvisor | container resource metric exporter source/config ownership | application tracing/logging or business state |
+| Redis Exporter | appolon1908-hue/Codestra-Redis-Exporter | Redis exporter source/config ownership | Redis application data mutation |
+| Blackbox Exporter | appolon1908-hue/Codestra-Blackbox-Exporter | synthetic HTTP/TCP/DNS/TLS probe exporter source/config ownership | provider mutation or application state |
+| PostgreSQL Exporter | desired: appolon1908-hue/Codestra-Postgres-Exporter | PostgreSQL read-only exporter source/config when repository exists | database writes or application migrations |
+| Superset | appolon1908-hue/Superset | business/management BI dashboards, datasets, read-only analytics connections, row-level security policy | operational alert routing, production business writes |
+| OpenBao | appolon1908-hue/Codestra-OpenBao | runtime secret authority, policies, dynamic credentials, PKI/lease/rotation configuration | application business logic or secrets committed to Git |
+
+## Current repository inventory note
+
+The PostgreSQL exporter repository named `Codestra-Postgres-Exporter` was not present in the connected GitHub inventory at the time of this architecture update. The row above reserves the intended ownership boundary but must not be treated as proof that the repository or runtime exists.
+
+Several recently created observability repositories may still be in bootstrap/import work. Repository existence is not production readiness.
 
 ## Canonical effect path
 
@@ -47,33 +53,42 @@ Application/Product
 
 Provider callbacks/events return through signed/private governed ingress to Middleware, which normalizes and persists them before they are exposed to SDK consumers, dashboards, n8n or Odoo workflows.
 
-## Observability authority path
+## Canonical observability path
 
 ```text
-Applications / infrastructure
-        |
-        +--> OpenTelemetry instrumentation/collector -> Tempo traces
-        |                                         \-> Loki logs where configured
-        +--> Prometheus scrape/exporters ------------> Prometheus metrics
-                                                          |
-                                                          +--> Alertmanager
-                                                          +--> Grafana
-        +--> Loki ----------------------------------------> Grafana
-        +--> Tempo ---------------------------------------> Grafana
+Applications / servers / containers
+      |
+      +--> Alloy / OpenTelemetry --------> Loki / Tempo
+      +--> Exporters / app metrics ------> Prometheus
+                                            |
+                                            v
+                                      Alertmanager
+                                            |
+                                            v
+                                       Middleware
+                                            |
+                                approved notification/ticket path
+
+Prometheus + Loki + Tempo + Alertmanager ---> Grafana
+Business reporting/read replicas ----------> Superset
+Runtime identities ------------------------> OpenBao for secrets
 ```
 
-`Infustruction-repo` coordinates topology and deployment relationships only. It does not duplicate the canonical component configuration from the six dedicated observability repositories.
+Alertmanager is a router, not a separate communication-delivery platform. Any effectful alert notification or ticket/orchestration write crosses Middleware.
 
 ## Cross-repository change rule
 
-A public behavior change that crosses repositories must identify all affected owners before implementation. The release evidence must record exact accepted source SHAs for every changed repository and verify contract compatibility.
+A public behavior change that crosses repositories must identify all affected owners before implementation. Release evidence must record exact accepted source SHAs for every changed repository and verify contract compatibility.
 
 Examples:
+
 - New email operation: SDK contract + Middleware implementation/adapter + Klyrow runtime/read-back + Kong route/security if externally exposed.
 - New SMS event: Telnexa event source + Middleware normalization + SDK AsyncAPI + n8n/Odoo consumer changes only if needed.
 - New voice command: SDK contract + Middleware command mapping + Vicidialer-Codestra runtime/read-back + Odoo/n8n workflow changes only where business behavior requires them.
 - New platform metric: owning application instrumentation + Prometheus scrape/rule change if required + Grafana dashboard change if visualized.
-- New distributed trace: owning application instrumentation + Telemetry collector pipeline + Tempo policy + Grafana visualization if required.
+- New alert: Prometheus rule + required labels/annotations + Alertmanager routing policy + Middleware incident/notification handling + Grafana incident visibility.
+- New distributed trace: owning application instrumentation + Telemetry/Alloy pipeline + Tempo policy + Grafana correlation.
+- New runtime secret: owning application policy + OpenBao path/policy + deployment identity; never a Git secret.
 
 ## No-bypass rules
 
@@ -85,8 +100,12 @@ Examples:
 6. Odoo does not directly drive external provider mutations when Middleware governance applies.
 7. Provider systems do not write directly into another provider or product database.
 8. Observability repositories never become business-state authorities.
-9. `Infustruction-repo` does not duplicate configuration owned by a dedicated observability repository.
+9. Alertmanager never becomes a parallel SMS/email/voice notification platform.
+10. Superset remains read-only against governed analytics/read models.
+11. Exporters use read-only monitoring credentials where credentials are required.
+12. OpenBao secrets are never committed into component repositories.
+13. `Infustruction-repo` does not duplicate configuration owned by a dedicated component repository.
 
 ## Release coordination
 
-The architecture repo owns the dependency map and readiness checklist. Runtime approval remains with each owning repository and its deployment process. Cross-stack upgrades must pin the exact accepted SHA/version for each participating component.
+This architecture repository owns the dependency map and cross-repository readiness checklist. Runtime approval remains with each owning repository and deployment process. Cross-stack upgrades must pin exact accepted SHA/version for every participating component and prove compatibility in staging before production promotion.

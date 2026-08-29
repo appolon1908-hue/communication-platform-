@@ -1,84 +1,125 @@
-# Canonical Communications Event Catalogue
+# Canonical Event Catalogue
 
-Date: 2026-08-29
+This catalogue defines the normalized event vocabulary shared across communications, observability and incident workflows. Event names are architecture contracts; source repositories must prove implementation before any event is considered runtime-active.
 
-## Event Envelope
+## Common event envelope
 
-All external events should carry:
+Every canonical event should carry, where applicable:
 
-- event id
-- event type
-- event version
-- tenant id
-- canonical message or command id
-- correlation id
-- causation id where available
-- channel
-- provider
-- provider reference where available
-- canonical status
-- occurred timestamp
-- payload metadata with sensitive values redacted
+```text
+event_id
+event_type
+event_version
+occurred_at
+observed_at
+tenant_id
+codestra_business
+service
+environment
+correlation_id
+causation_id
+command_id
+message_id
+provider_id
+actor_type
+source_system
+payload
+```
 
-## Message Events
+Secrets and unnecessary PII must never be included. High-cardinality identifiers belong in event fields, not Prometheus/Alertmanager labels.
 
-| Event Type | Channel | Source Authority | Status | Meaning |
-| --- | --- | --- | --- | --- |
-| `codestra.communications.message.accepted.v1` | all | Middleware | Active for email Step 3 | Request accepted and canonical message created. |
-| `codestra.communications.message.queued.v1` | all | Middleware/provider | Active for email Step 3 | Message queued for provider submission. |
-| `codestra.communications.message.submitted.v1` | all | Provider adapter | Planned | Provider submission attempted. |
-| `codestra.communications.message.provider_accepted.v1` | all | Provider adapter | Planned | Provider accepted responsibility for delivery. |
-| `codestra.communications.message.delivered.v1` | email/sms/voice | Provider runtime | Email partial | Provider reports delivery or voice completion. |
-| `codestra.communications.message.failed.v1` | all | Provider runtime/Middleware | Email partial | Terminal failure. |
-| `codestra.communications.message.suppressed.v1` | email/sms | Middleware/provider policy | Email partial | Message blocked by suppression/consent policy. |
-| `codestra.communications.message.cancelled.v1` | all | Middleware/provider | Email partial | Message cancelled before terminal provider effect. |
-| `codestra.communications.message.indeterminate.v1` | all | Middleware/provider | Planned | Provider effect cannot be proven yet. |
-| `codestra.communications.message.reconciled.v1` | all | Middleware | Planned | Indeterminate state resolved. |
+## Communications lifecycle
 
-## Email Provider Events
+| Event | Source authority | Meaning |
+|---|---|---|
+| `communications.message.accepted` | Middleware | Command passed policy and was durably accepted |
+| `communications.message.queued` | Middleware/provider adapter | Awaiting provider dispatch |
+| `communications.message.submitted` | Provider adapter | Submission attempt made |
+| `communications.message.provider_accepted` | Klyrow/Telnexa/VICIdial adapter | Provider accepted request |
+| `communications.message.delivered` | Provider truth via Middleware | Delivery/read-back proves completion |
+| `communications.message.failed` | Middleware/provider truth | Terminal failure |
+| `communications.message.suppressed` | Middleware/policy | Consent/suppression prevented send |
+| `communications.message.reconciliation_required` | Middleware | State is indeterminate and requires read-back/reconciliation |
+| `communications.message.dead_lettered` | Middleware | Retry/reconciliation policy exhausted |
 
-| Event Type | Source | Canonical Status |
-| --- | --- | --- |
-| `klyrow.email.queued` | Klyrow | queued |
-| `klyrow.email.delivered` | Klyrow/Postal | delivered |
-| `klyrow.email.bounced_soft` | Klyrow/Postal | failed |
-| `klyrow.email.bounced_hard` | Klyrow/Postal | failed |
-| `klyrow.email.complained` | Klyrow/Postal | failed |
-| `klyrow.email.suppressed` | Klyrow | suppressed |
-| `klyrow.email.deferred` | Klyrow/Postal | indeterminate |
+## Email events
 
-## SMS Provider Events
+| Event | Source authority |
+|---|---|
+| `email.delivered` | Klyrow/Postal -> Middleware |
+| `email.bounced.soft` | Klyrow/Postal -> Middleware |
+| `email.bounced.hard` | Klyrow/Postal -> Middleware |
+| `email.complaint` | Klyrow/Postal -> Middleware |
+| `email.suppressed` | Middleware/Klyrow normalized state |
+| `email.domain.authentication_changed` | Klyrow/domain authority |
+| `email.reputation.degraded` | Klyrow/observability read model |
 
-| Event Type | Source | Canonical Status |
-| --- | --- | --- |
-| `telnexa.sms.submitted` | Telnexa/Jasmin | submitted |
-| `telnexa.sms.delivered` | Telnexa/Jasmin DLR | delivered |
-| `telnexa.sms.failed` | Telnexa/Jasmin DLR | failed |
-| `telnexa.sms.expired` | Telnexa/Jasmin DLR | expired |
-| `telnexa.sms.received` | Telnexa/Jasmin MO | received |
-| `telnexa.sms.opted_out` | Telnexa/policy | suppressed |
+## SMS events
 
-## Voice Provider Events
+| Event | Source authority |
+|---|---|
+| `sms.submitted` | Telnexa/Jasmin -> Middleware |
+| `sms.delivered` | Telnexa DLR -> Middleware |
+| `sms.failed` | Telnexa DLR -> Middleware |
+| `sms.expired` | Telnexa DLR -> Middleware |
+| `sms.received` | Telnexa MO -> Middleware |
+| `sms.opt_out` | Telnexa/Middleware policy normalization |
+| `sms.route.degraded` | Telnexa/observability |
 
-| Event Type | Source | Canonical Status |
-| --- | --- | --- |
-| `vicidial.call.started` | Vicidialer-Codestra | submitted |
-| `vicidial.call.answered` | Vicidialer-Codestra | provider_accepted |
-| `vicidial.call.disposition_updated` | Vicidialer-Codestra | delivered or failed by disposition |
-| `vicidial.call.completed` | Vicidialer-Codestra | delivered |
-| `vicidial.call.failed` | Vicidialer-Codestra | failed |
-| `vicidial.call.recording_available` | Vicidialer-Codestra | informational |
+## Voice/contact-center events
 
-## Webhook Delivery Events
+| Event | Source authority |
+|---|---|
+| `voice.call.requested` | Middleware |
+| `voice.call.started` | VICIdial/Asterisk -> Middleware |
+| `voice.call.answered` | VICIdial/Asterisk -> Middleware |
+| `voice.call.failed` | VICIdial/Asterisk -> Middleware |
+| `voice.call.ended` | VICIdial/Asterisk -> Middleware |
+| `voice.call.dispositioned` | VICIdial/Odoo normalized workflow |
+| `voice.callback.scheduled` | Middleware/Odoo business workflow |
+| `voice.transfer.completed` | VICIdial -> Middleware |
 
-| Event Type | Source | Purpose |
-| --- | --- | --- |
-| `codestra.webhook.delivery.queued.v1` | Middleware | Outbound webhook delivery queued. |
-| `codestra.webhook.delivery.succeeded.v1` | Middleware | Subscriber endpoint acknowledged. |
-| `codestra.webhook.delivery.failed.v1` | Middleware | Delivery attempt failed. |
-| `codestra.webhook.delivery.dead_lettered.v1` | Middleware | Retry policy exhausted. |
-| `codestra.webhook.signature.failed.v1` | Middleware | Incoming or outgoing signature verification failed. |
+## Webhook/integration events
 
-## Rule
+| Event | Meaning |
+|---|---|
+| `webhook.delivery.succeeded` | Signed webhook delivered successfully |
+| `webhook.delivery.failed` | Delivery failed and retry policy applies |
+| `webhook.delivery.dead_lettered` | Delivery exhausted retry policy |
+| `webhook.signature.rejected` | Invalid/replayed signature rejected |
+| `integration.reconciliation.started` | Read-back/reconciliation initiated |
+| `integration.reconciliation.completed` | State reconciled |
+| `integration.reconciliation.failed` | Reconciliation failed and operator action required |
 
-Provider-native event names may be retained in metadata, but public consumers should depend on canonical Codestra event names and statuses.
+## Observability/alert events
+
+| Event | Source authority | Meaning |
+|---|---|---|
+| `observability.alert.firing` | Alertmanager -> Middleware | Alert group contains firing alert(s) |
+| `observability.alert.resolved` | Alertmanager -> Middleware | Alert group resolved |
+| `observability.incident.detected` | Middleware | Durable incident created |
+| `observability.incident.notified` | Middleware | Approved notification route executed |
+| `observability.incident.acknowledged` | Middleware/operator UI | Human/system acknowledgement recorded |
+| `observability.incident.escalated` | Middleware | Escalation level changed |
+| `observability.incident.mitigating` | Middleware/Odoo governed state | Mitigation underway |
+| `observability.incident.resolved` | Middleware | Incident resolved |
+| `observability.incident.reopened` | Middleware | Incident recurred after resolution |
+| `observability.alert.silenced` | Alertmanager/operator evidence | Alert silence applied |
+| `observability.alert.recurrence_detected` | Middleware/analytics | Fingerprint recurrence threshold crossed |
+
+## Deployment/change events
+
+| Event | Source authority |
+|---|---|
+| `deployment.started` | owning CI/CD/release process |
+| `deployment.completed` | owning CI/CD/release process |
+| `deployment.failed` | owning CI/CD/release process |
+| `configuration.changed` | owning repository/deployment process |
+| `release.promoted` | owning release process |
+| `release.rolled_back` | owning release process |
+
+Deployment/change events should carry `service`, `environment`, `deployment_sha`, and a change/release reference so Grafana can correlate incidents with what changed.
+
+## SDK/AsyncAPI rule
+
+Publicly consumed canonical events must eventually be represented in the AsyncAPI/event contract owned by `SDK-repository`. This file is the cross-repository architecture catalogue, not a substitute for generated contracts or runtime proof.

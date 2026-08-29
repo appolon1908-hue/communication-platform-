@@ -1,78 +1,112 @@
-# Canonical Communications API Catalogue
+# Canonical API Catalogue
 
-Date: 2026-08-29
+This catalogue defines the provider-neutral communications/API architecture. It is an architecture contract, not proof that every endpoint already exists in a deployed runtime.
 
-## Authority
+## Status values
 
-Public contracts and generated clients belong in `appolon1908-hue/SDK-repository`. Runtime execution belongs in `appolon1908-hue/Middleware-` and the provider runtime repos.
+- `EXISTING_SOURCE_CONTRACT` — confirmed in an owning source contract.
+- `TARGET_CONTRACT` — canonical endpoint to be implemented/aligned.
+- `INTERNAL_ONLY` — not intended as a public developer API.
 
-## Message API
+## Control-plane foundation
 
-| Endpoint | Method | Owner | Status | Purpose |
-| --- | --- | --- | --- | --- |
-| `/v1/communications/messages` | POST | SDK contract, Middleware runtime | Active for email Step 3 | Submit provider-neutral email/SMS/voice message intent. |
-| `/v1/communications/messages` | GET | SDK contract, Middleware read model | Partial | Tenant-scoped message search/list. |
-| `/v1/communications/messages/{messageId}` | GET | SDK contract, Middleware read model | Partial | Canonical message read-back. |
-| `/v1/communications/messages/{messageId}/events` | GET | SDK contract, Middleware read model | Partial | Canonical timeline. |
-| `/v1/communications/messages/{messageId}/cancel` | POST | SDK contract, Middleware runtime | Email partial | Cancel queued/scheduled messages where provider state allows. |
-| `/v1/communications/messages/{messageId}/retry` | POST | SDK contract, Middleware runtime | Planned | Policy-controlled retry after known-safe failure. |
+| Method | Path | Status | Principal authority | Purpose |
+|---|---|---|---|---|
+| POST | `/v1/commands` | EXISTING_SOURCE_CONTRACT | Middleware | Durable privileged command submission with tenant/correlation/idempotency context |
+| GET | `/v1/operations/{command_id}` | EXISTING_SOURCE_CONTRACT | Middleware | Durable command/operation status and result read-back |
 
-## Template API
+These generic control-plane endpoints remain the underlying safe execution primitive where provider-neutral APIs map into effectful operations.
 
-| Endpoint | Method | Owner | Status | Purpose |
-| --- | --- | --- | --- | --- |
-| `/v1/communications/templates` | GET/POST | SDK contract, Middleware facade, provider runtime | Planned | List/create templates. |
-| `/v1/communications/templates/{templateId}` | GET/PATCH | SDK contract, Middleware facade, provider runtime | Planned | Read/update template metadata and versions. |
-| `/v1/communications/templates/{templateId}/render` | POST | SDK contract, Middleware/provider runtime | Planned | Deterministic render preview with redaction rules. |
+## Communications message API
 
-## Sender, Domain, and Identity API
+| Method | Path | Status | Principal implementation |
+|---|---|---|---|
+| POST | `/v1/communications/messages` | TARGET_CONTRACT | Middleware + owning provider adapter |
+| GET | `/v1/communications/messages` | TARGET_CONTRACT | Middleware/read model |
+| GET | `/v1/communications/messages/{message_id}` | TARGET_CONTRACT | Middleware/read model |
+| GET | `/v1/communications/messages/{message_id}/events` | TARGET_CONTRACT | Middleware event/read model |
+| POST | `/v1/communications/messages/{message_id}/cancel` | TARGET_CONTRACT | Middleware policy + provider capability |
+| POST | `/v1/communications/messages/{message_id}/retry` | TARGET_CONTRACT | Middleware policy/reconciliation |
 
-| Endpoint | Method | Owner | Status | Purpose |
-| --- | --- | --- | --- | --- |
-| `/v1/communications/senders` | GET/POST | SDK contract, Middleware facade, provider runtime | Planned | Email senders, SMS sender IDs/numbers, voice caller IDs. |
-| `/v1/communications/senders/{senderId}` | GET/PATCH | SDK contract, Middleware facade, provider runtime | Planned | Sender read/update. |
-| `/v1/communications/domains` | GET/POST | SDK contract, Klyrow provider truth | Email partial | Email domain onboarding/status. |
-| `/v1/communications/domains/{domainId}` | GET/PATCH | SDK contract, Klyrow provider truth | Planned | Domain lifecycle. |
-| `/v1/communications/domains/{domainId}/dns` | GET | Klyrow provider truth | Partial | SPF/DKIM/DMARC/PTR/TLS evidence. |
+## Templates
 
-## Consent, Suppression, and Preference API
+| Method | Path | Status | Principal implementation |
+|---|---|---|---|
+| GET | `/v1/communications/templates` | TARGET_CONTRACT | Middleware/read model + owning channel runtime |
+| POST | `/v1/communications/templates` | TARGET_CONTRACT | Middleware + owning channel runtime |
+| GET | `/v1/communications/templates/{template_id}` | TARGET_CONTRACT | Middleware/read model |
+| PATCH | `/v1/communications/templates/{template_id}` | TARGET_CONTRACT | Middleware + owning channel runtime |
 
-| Endpoint | Method | Owner | Status | Purpose |
-| --- | --- | --- | --- | --- |
-| `/v1/communications/suppressions` | GET/POST | SDK contract, Middleware policy, provider truth | Planned | Suppression list management. |
-| `/v1/communications/suppressions/{suppressionId}` | DELETE | SDK contract, Middleware policy, provider truth | Planned | Governed removal. |
-| `/v1/communications/preferences` | GET/POST/PATCH | SDK contract, Middleware policy | Planned | Recipient and tenant communication preferences. |
-| `/v1/communications/consent` | GET/POST | SDK contract, Middleware policy | Planned | Consent capture and evidence. |
+## Channel/provider discovery
 
-## Provider, Health, Usage, and Reputation API
+| Method | Path | Status | Purpose |
+|---|---|---|---|
+| GET | `/v1/communications/channels` | TARGET_CONTRACT | Supported channels/capabilities |
+| GET | `/v1/communications/channels/health` | TARGET_CONTRACT | Channel health summary |
+| GET | `/v1/communications/providers/health` | TARGET_CONTRACT | Provider health, degraded/maintenance state |
+| GET | `/v1/communications/usage` | TARGET_CONTRACT | Governed usage/cost view |
+| GET | `/v1/communications/reputation` | TARGET_CONTRACT | Email/SMS reputation/deliverability read model |
 
-| Endpoint | Method | Owner | Status | Purpose |
-| --- | --- | --- | --- | --- |
-| `/v1/communications/providers/health` | GET | Middleware read model, provider truth | Partial | Cross-provider health. |
-| `/v1/communications/reputation` | GET | Middleware read model, Klyrow/provider truth | Email partial | Email/domain/provider reputation. |
-| `/v1/communications/usage` | GET | Middleware read model, analytics | Partial | Tenant/channel/provider usage. |
-| `/v1/communications/reconciliation` | GET | Middleware read model | Planned | Indeterminate state and repair queue. |
-| `/v1/communications/webhooks/health` | GET | Middleware/webhook delivery | Planned | Subscription delivery health. |
+## Consent/preferences/suppression
 
-## Internal Provider APIs
+| Method | Path | Status |
+|---|---|---|
+| GET | `/v1/communications/preferences` | TARGET_CONTRACT |
+| POST | `/v1/communications/preferences` | TARGET_CONTRACT |
+| PATCH | `/v1/communications/preferences/{preference_id}` | TARGET_CONTRACT |
+| GET | `/v1/communications/suppressions` | TARGET_CONTRACT |
+| POST | `/v1/communications/suppressions` | TARGET_CONTRACT |
+| DELETE | `/v1/communications/suppressions/{suppression_id}` | TARGET_CONTRACT |
 
-Internal provider APIs are not public SDK contracts. Middleware may call them using service identity only.
+All effectful changes must enforce tenant, consent, capability, authorization and audit policy in Middleware.
 
-| Provider | Internal Surface | Status |
-| --- | --- | --- |
-| Klyrow | `/v1/internal/email/communications/*` | Step 3 branch implemented for safe-mode email. |
-| Telnexa | SMS command/read-back provider surface | Planned. |
-| Vicidialer-Codestra | Voice command/read-back provider surface | Planned. |
+## Dashboard/read-model API
 
-## Required Header Model
+| Method | Path | Status |
+|---|---|---|
+| GET | `/v1/communications/overview` | TARGET_CONTRACT |
+| GET | `/v1/communications/domains` | TARGET_CONTRACT |
+| GET | `/v1/communications/webhooks/health` | TARGET_CONTRACT |
+| GET | `/v1/communications/reconciliation` | TARGET_CONTRACT |
 
-| Header | Required For | Purpose |
-| --- | --- | --- |
-| `Authorization: Bearer <token>` | All public calls | Keycloak-issued identity validated by Kong and Middleware. |
-| `X-Tenant-ID` | Tenant-scoped calls | Tenant isolation. |
-| `X-Correlation-ID` | Effectful calls | Cross-service traceability. |
-| `Idempotency-Key` | Effectful calls | Duplicate prevention. |
+These endpoints are read-oriented and may be backed by normalized read models rather than direct provider queries.
 
-## Rule
+## Alert/incident integration
 
-Direct product calls to Klyrow, Telnexa, VICIdial, Postal, Jasmin, Asterisk, Odoo, or n8n are not canonical when the operation is a governed communications write.
+The Alertmanager-to-Middleware endpoint is intentionally **not assigned a public canonical URL here yet** because source/runtime proof for a dedicated ingestion route does not currently exist. `Codestra-Alertmanager` loads the webhook target from a runtime secret file and treats the Middleware ingestion contract as `CONTRACT_PREPARED_RUNTIME_ENDPOINT_NOT_PROVEN`.
+
+Target responsibilities for that endpoint are:
+
+- authenticate the Alertmanager workload;
+- validate required alert metadata;
+- assign/maintain durable incident IDs;
+- deduplicate Alertmanager retries;
+- route approved notifications;
+- persist acknowledgements/escalations;
+- create Odoo incident/ticket records only through Middleware;
+- trigger n8n orchestration only through Middleware governance.
+
+## Public security rules
+
+Any externally exposed endpoint must follow:
+
+```text
+Client -> Caddy -> Kong -> Keycloak-validated identity -> Middleware
+```
+
+Required properties include:
+
+- canonical issuer/audience validation;
+- short-lived credentials;
+- tenant context;
+- authorization scopes/capabilities;
+- correlation ID;
+- idempotency for effectful operations;
+- request validation;
+- durable audit;
+- no browser/provider secrets;
+- no direct provider write routes.
+
+## SDK authority
+
+The public OpenAPI/AsyncAPI representations of accepted APIs belong in `appolon1908-hue/SDK-repository`. This architecture catalogue defines cross-repository intent and ownership; it must not become a second generated-SDK source.

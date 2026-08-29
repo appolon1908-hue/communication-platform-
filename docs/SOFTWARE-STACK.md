@@ -2,159 +2,144 @@
 
 ## Purpose
 
-This document defines the supporting software for the Codestra communications platform. Each observability component now has its own principal GitHub repository. `communication-platform-` owns architecture and information design; `Infustruction-repo` coordinates shared topology/deployment relationships; the dedicated component repositories own their own runtime/configuration source.
+This document defines the supporting dashboard, observability, analytics and secrets software for the Codestra communications platform. Each dedicated component repository remains its principal source. `communication-platform-` owns architecture and information design; `Infustruction-repo` coordinates shared topology/deployment relationships.
 
-## Principal dashboard, observability, analytics and secrets repositories
+## Principal repositories
 
 | Software | Principal repository | Principal responsibility |
 |---|---|---|
-| Grafana OSS | `appolon1908-hue/Codestra-Grafana-` | dashboards, folders, provisioning, data-source declarations, Grafana RBAC policy templates and Grafana release evidence |
-| Prometheus | `appolon1908-hue/Codestra-Prometheus` | scrape configuration, TSDB/retention policy, recording/alert rules and Prometheus release evidence |
-| Alertmanager | `appolon1908-hue/Codestra-Alertmanager` | alert routing, grouping, inhibition, silencing policy and non-secret receiver definitions |
-| Loki | `appolon1908-hue/Codestra-Loki` | Loki ingestion, tenancy, storage and retention configuration |
-| Tempo | `appolon1908-hue/Codestra-Tempo` | Tempo trace ingestion, storage, retention and query configuration |
-| OpenTelemetry | `appolon1908-hue/Codestra-Telemetry` | OpenTelemetry Collector pipelines, receivers, processors, exporters and propagation conventions |
-| Apache Superset | `appolon1908-hue/Superset` | analytics dashboards, datasets, semantic reporting, campaign/channel usage reporting and Superset release evidence |
-| Node Exporter | `appolon1908-hue/Codestra-Node-Exporter` | host metrics exporter configuration and release evidence |
-| cAdvisor | `appolon1908-hue/Codestra-cAdvisor` | container metrics exporter configuration and release evidence |
-| PostgreSQL Exporter | `appolon1908-hue/Codestra-Postgres-Exporter` | PostgreSQL metrics exporter configuration and release evidence |
-| Redis Exporter | `appolon1908-hue/Codestra-Redis-Exporter` | Redis metrics exporter configuration and release evidence |
-| Blackbox Exporter | `appolon1908-hue/Codestra-Blackbox-Exporter` | external probe/synthetic check configuration and release evidence |
-| Grafana Alloy | `appolon1908-hue/Codestra-Alloy` | telemetry/log/metric collection agent configuration and release evidence |
-| OpenBao | `appolon1908-hue/Codestra-OpenBao` | secrets, leases, secret access policy, audit telemetry and release evidence |
+| Grafana OSS | `appolon1908-hue/Codestra-Grafana-` | operational dashboards, folders, provisioning, datasource declarations, RBAC templates and incident views |
+| Prometheus | `appolon1908-hue/Codestra-Prometheus` | metrics collection, scrape config, recording rules, alert rules and TSDB policy |
+| Alertmanager | `appolon1908-hue/Codestra-Alertmanager` | grouping, deduplication, inhibition, silencing and routing to Middleware only |
+| Loki | `appolon1908-hue/Codestra-Loki` | centralized log ingestion/storage/retention/query backend |
+| Tempo | `appolon1908-hue/Codestra-Tempo` | distributed trace ingestion/storage/retention/query backend |
+| OpenTelemetry Collector | `appolon1908-hue/Codestra-Telemetry` | OTLP receivers/processors/exporters and telemetry normalization |
+| Apache Superset | `appolon1908-hue/Superset` | read-only business/management analytics and reporting |
+| Node Exporter | `appolon1908-hue/Codestra-Node-Exporter` | host operating-system metrics |
+| cAdvisor | `appolon1908-hue/Codestra-cAdvisor` | container resource metrics |
+| PostgreSQL Exporter | desired `appolon1908-hue/Codestra-Postgres-Exporter` | read-only PostgreSQL metrics when repository is created/confirmed |
+| Redis Exporter | `appolon1908-hue/Codestra-Redis-Exporter` | read-only Redis metrics |
+| Blackbox Exporter | `appolon1908-hue/Codestra-Blackbox-Exporter` | synthetic HTTP/TCP/DNS/TLS probes |
+| Grafana Alloy | `appolon1908-hue/Codestra-Alloy` | host/container log and telemetry collection agent profiles |
+| OpenBao | `appolon1908-hue/Codestra-OpenBao` | runtime secrets, dynamic credentials, PKI/leases/rotation policy |
 
-These repositories remain independent release authorities. No central repository may silently replace their accepted configuration.
+The connected GitHub inventory still does not show `Codestra-Postgres-Exporter`; architecture reserves the ownership boundary but does not treat the repository/runtime as existing.
 
-Remote access review on 2026-08-29 confirmed every listed supporting repository except `appolon1908-hue/Codestra-Postgres-Exporter`, which was not reachable from this environment. Confirm whether that repository is private, renamed, or still needs to be created.
+## Canonical telemetry path
 
-## Core observability stack
+```text
+Applications / hosts / containers
+     |
+     +--> Alloy / OpenTelemetry -----> Loki
+     |                         \-----> Tempo
+     |
+     +--> metrics / exporters --------> Prometheus
+                                           |
+                                           v
+                                      Alertmanager
+                                           |
+                                           v
+                                       Middleware
+                                           |
+                              approved notification/ticket path
 
-### Grafana OSS — operational dashboard authority
+Prometheus + Loki + Tempo + Alertmanager -> Grafana
+Governed analytics/read models ------------> Superset
+Workload identities ------------------------> OpenBao
+```
 
-Use Grafana for real-time operational dashboards and incident views across Caddy, Kong, Middleware, Keycloak, Klyrow, Telnexa, VICIdial, n8n, Odoo and infrastructure.
+## Grafana — operational dashboard authority
 
-Primary views:
-- platform health
-- email delivery and reputation
-- SMS delivery/DLR health
-- voice/call queue health
-- API latency/errors
-- provider health
-- queue/backlog/dead-letter state
-- database/Redis/NATS health
-- host/container capacity
-- alert status
+Grafana is the main operational/SRE dashboard. It should answer:
 
-Grafana is a visualization layer only. It must not become a privileged write path into provider systems.
+> What is broken, where, since when, which business/customer is affected, and what changed?
 
-### Prometheus — metrics collection and alert source
+Primary views include executive health, incidents, infrastructure, Middleware, Kong, Keycloak, Odoo, n8n, VICIdial, PostgreSQL, Redis, Caddy, deployment/version, security events, SLO/error-budget and application-specific dashboards.
 
-Use Prometheus to scrape service, infrastructure and exporter metrics. It remains the canonical time-series metrics source for Grafana operational dashboards.
+Grafana is read-oriented and must never become a privileged provider write path.
 
-Required metric families include:
-- HTTP request/error/latency
-- command state and reconciliation counts
-- inbox/outbox lag
-- queue depth
-- email accepted/delivered/bounced/complained/suppressed
-- SMS submitted/delivered/failed/expired/opted-out
-- voice call attempts/answered/failed/abandoned/queue depth
-- provider latency and health
-- database, Redis, NATS, container and host metrics
+## Prometheus — metrics and alert-rule authority
 
-### Alertmanager — alert delivery authority
+Prometheus scrapes service/infrastructure/exporter metrics and evaluates alert rules. Alert rules must attach stable low-cardinality labels such as `severity`, `environment`, `service`, `codestra_business` and `owner`, plus `summary`, `description` and `runbook_url` annotations.
 
-Alertmanager owns routing, grouping, inhibition, escalation and receiver policy for Prometheus alerts. Secret-bearing receiver credentials are injected externally and never committed.
+## Alertmanager — central alert-routing brain
 
-### Loki — centralized logs
+Alertmanager receives Prometheus alerts and owns:
 
-Use Loki for searchable application and infrastructure logs displayed through Grafana.
+- severity routing;
+- grouping;
+- deduplication;
+- inhibition;
+- maintenance silences;
+- repeat intervals;
+- alert receiver selection.
 
-Rules:
-- no credentials, authorization headers, message bodies containing PII, SMTP credentials, provider keys or secrets in logs
-- structured logs preferred
-- correlation_id, tenant-safe identifier, service, environment and operation_id should be standard fields; labels must remain cardinality-controlled
-- retention and access must be environment/security scoped
+It does **not** independently send SMS/email/voice or create Odoo/n8n/provider writes. The canonical effect path is:
 
-### Tempo — distributed tracing
+```text
+Prometheus -> Alertmanager -> Middleware -> approved channel / Odoo / n8n
+```
 
-Use Tempo for end-to-end traces across:
+Middleware owns durable incident IDs, acknowledgement, escalation, notification authorization and effectful integrations.
 
-Application -> Caddy -> Kong -> Middleware -> provider adapter -> Klyrow/Telnexa/VICIdial
+## Loki — centralized log authority
 
-Trace context should preserve correlation across asynchronous processing where practical. Tracing must never record secret-bearing headers or raw sensitive bodies.
+Loki stores searchable logs for Linux/systemd, containers, Caddy, Kong, Keycloak, Middleware, Odoo, n8n, PostgreSQL, Redis, VICIdial, application backends, workers, OpenBao and security services.
 
-### OpenTelemetry — instrumentation and collection standard
+Preferred structured fields include timestamp, level, service, environment, request/correlation/trace IDs, tenant ID as a field, operation, actor type, result and error code. Customer IDs, phone numbers, emails, request IDs and trace IDs must not be high-cardinality Loki labels.
 
-OpenTelemetry is the vendor-neutral instrumentation and collection standard. The dedicated Telemetry repository owns Collector pipelines and cross-service propagation conventions; each application repository owns its own instrumentation code.
+## Tempo — distributed trace authority
 
-## Business analytics stack
+Tempo traces the request path across services such as:
 
-### Apache Superset — communications analytics and reporting
+```text
+Application -> Caddy -> Kong -> Middleware -> provider adapter/runtime
+```
 
-Use Superset for business/operations analytics that are not best represented as real-time infrastructure dashboards.
+Trace context should correlate with Grafana/Loki/Prometheus without recording secret-bearing headers or raw sensitive bodies.
 
-Recommended datasets/views:
-- delivery performance by tenant/channel/provider
-- email domain and campaign trends
-- SMS usage/cost/margin trends
-- call-center productivity and disposition trends
-- campaign outcomes
-- communication volume by customer/product
-- opt-out/consent trends
-- SLA attainment
-- provider quality comparison
-- monthly usage/chargeback reporting
+## OpenTelemetry + Alloy — collection standard
 
-Superset should read curated analytics/read models, not live provider administrative databases directly. If Superset receives a dedicated repository later, that repository becomes its principal source automatically under the repository-authority rule.
+OpenTelemetry defines vendor-neutral telemetry instrumentation/collection. Alloy is the host/container collection agent. Reusable profiles should exist for edge/gateway, Middleware, databases, provider servers, application servers and VICIdial.
+
+## Exporters
+
+- Node Exporter: CPU, memory, disk, filesystem, network, load, uptime and safe textfile operational metrics.
+- cAdvisor: container CPU/memory/network/filesystem/throttling/resource usage.
+- PostgreSQL Exporter: connections, locks, deadlocks, WAL, checkpoints, replication, cache, transaction age and vacuum health using a read-only account.
+- Redis Exporter: memory, clients, commands, keyspace, eviction, replication, persistence and latency.
+- Blackbox Exporter: HTTPS/TCP/DNS/TLS reachability and certificate expiry.
+
+Exporter credentials, where required, must be read-only.
+
+## Superset — business analytics
+
+Superset is separate from Grafana. It handles business/management reporting such as tenant/channel/provider delivery trends, campaign performance, cost/margin, call-center productivity and monthly usage. It reads governed analytics/read models or replicas and must not mutate production business state.
+
+## OpenBao — secrets authority
+
+OpenBao owns runtime API keys, provider credentials, database credentials, webhook signing secrets, certificates and dynamic leases. Git repositories store only policies/templates/references, never real secret values.
 
 ## Product/operator dashboard
 
-A purpose-built communications admin UI is still required for controlled product workflows. It should call governed read/action APIs and cover:
-- tenant configuration
-- sender/domain/number state
-- templates
-- message search/timeline
-- suppressions/preferences
-- webhook configuration
-- provider status
-- reconciliation/dead-letter workflows
-- quotas and usage
-- user/RBAC views
+A purpose-built admin UI is still required for effectful workflows such as tenant configuration, templates, suppressions/preferences, webhook management, reconciliation/dead-letter operations and controlled provider/business actions. It calls governed APIs through Kong -> Middleware.
 
-Privileged actions must flow through Kong -> Middleware. The dashboard must never hold Postal/Jasmin/VICIdial administrative credentials.
+## Deployment sequence
 
-## Additional supporting systems
+Recommended dependency order:
 
-Node Exporter, cAdvisor, PostgreSQL Exporter, Redis Exporter, Blackbox Exporter, Alloy and OpenBao now have dedicated principal repositories. Infrastructure may coordinate their deployment topology, but the component repositories own their source/configuration.
+1. OpenBao/security foundation.
+2. Alloy + Node Exporter + cAdvisor.
+3. PostgreSQL/Redis exporters.
+4. Blackbox Exporter.
+5. Prometheus.
+6. Alertmanager routing source/config.
+7. Loki.
+8. Tempo.
+9. OpenTelemetry Collector application pipelines.
+10. Grafana operational dashboard.
+11. Middleware alert ingestion/incident routing proof.
+12. Superset business analytics.
+13. Purpose-built communications operator dashboard.
 
-## Data ownership rule
-
-Observability and analytics systems are secondary/read-oriented systems. They do not become authoritative stores for CRM state, message execution state, billing ledgers, identities, provider truth, campaign membership or consent/suppression authority.
-
-## Initial deployment sequence
-
-Phase 1:
-1. Prometheus
-2. Alertmanager
-3. Grafana OSS
-4. Node Exporter
-5. cAdvisor
-6. PostgreSQL/Redis exporters
-7. Blackbox Exporter
-
-Phase 2:
-8. OpenTelemetry Collector
-9. Loki
-10. Tempo
-
-Phase 3:
-11. Apache Superset
-12. curated analytics/read-model pipeline
-13. purpose-built communications admin dashboard
-
-## Repository ownership
-
-Dedicated repositories own their component source/configuration. `Infustruction-repo` owns only cross-component topology, environment conventions, shared network/storage placement, DR coordination and combined deployment evidence. `communication-platform-` owns dashboard architecture, metric definitions and cross-system information design. Service-specific metrics/log/tracing instrumentation remains in each principal service repository.
-
-See `docs/OBSERVABILITY-BRANCH-AND-UPGRADE-POLICY.md` for the permanent branch and future-upgrade model.
+Repository/source preparation does not equal runtime deployment or production activation.

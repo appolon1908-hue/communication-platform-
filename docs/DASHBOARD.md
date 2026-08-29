@@ -2,7 +2,17 @@
 
 ## Objective
 
-Provide one corporate-grade view of communications health, delivery, provider status, security and operations across Email, SMS and Voice without replacing the native provider administration systems.
+Provide one corporate-grade view of communications health, delivery, provider status, security, incidents and operations across Email, SMS and Voice without replacing the native provider administration systems.
+
+Grafana is the operational/SRE dashboard. Superset is the business/management analytics dashboard. Controlled actions belong in governed application/admin UIs that call Kong -> Middleware.
+
+## Primary operational question
+
+The Grafana layer must make it possible to answer:
+
+> What is broken, where, since when, which business/customer is affected, and what changed?
+
+The answer should correlate Prometheus metrics, Alertmanager incidents, Loki logs, Tempo traces and deployment/configuration-change evidence.
 
 ## Dashboard layers
 
@@ -12,13 +22,35 @@ Widgets:
 - total communications volume today / 7d / 30d
 - delivery success by channel
 - failure rate by channel
-- active incidents
+- active incidents by severity
 - provider health summary
 - tenant/customer usage
-- SLA status
-- top failing domains/providers/routes
+- SLA/SLO status
+- top failing domains/providers/routes/services
+- current deployment/config-change markers
 
-### 2. Email dashboard
+### 2. Incident command dashboard
+
+Source authorities: Prometheus + Alertmanager + Loki + Tempo + deployment evidence.
+
+Views:
+- firing critical/high/warning/informational alerts
+- incident ID and acknowledgement/escalation state from Middleware
+- business/application and service owner
+- environment/server/container
+- alert start time and duration
+- related deployment SHA/config change
+- correlated metrics
+- related logs by `trace_id` / `correlation_id`
+- distributed trace link
+- runbook link
+- affected dependency/provider
+- silence/maintenance state
+- recurrence history
+
+Alertmanager is routing-only. Acknowledge, escalation, ticketing and approved notification actions must be governed through Middleware or a controlled operator UI.
+
+### 3. Email dashboard
 
 Source authority: Klyrow / Postal / Mautic via governed read models.
 
@@ -39,7 +71,7 @@ Views:
 - campaign/template performance
 - sender reputation/deliverability trend
 
-### 3. SMS dashboard
+### 4. SMS dashboard
 
 Source authority: Telnexa / Jasmin via Middleware/read models.
 
@@ -55,7 +87,7 @@ Views:
 - retry/reconciliation state
 - usage/cost/margin where authorized
 
-### 4. Voice dashboard
+### 5. Voice dashboard
 
 Source authority: Vicidialer-Codestra / VICIdial / Asterisk.
 
@@ -74,11 +106,11 @@ Views:
 - recording metadata health
 - trunk/route health
 
-### 5. Unified message explorer
+### 6. Unified message explorer
 
 Search by:
 - canonical message/command ID
-- tenant
+- tenant/customer reference where authorized
 - channel
 - recipient/contact reference
 - correlation ID
@@ -88,11 +120,15 @@ Search by:
 - status
 
 Timeline should show:
-accepted -> policy -> queued -> provider submission -> provider acceptance -> delivery/failure -> callback -> reconciliation
+
+```text
+accepted -> policy -> queued -> provider submission -> provider acceptance
+        -> delivery/failure -> callback -> reconciliation
+```
 
 Sensitive payloads must be redacted by default.
 
-### 6. Provider health
+### 7. Provider health
 
 Show:
 - provider availability
@@ -104,7 +140,7 @@ Show:
 - last reconciliation
 - degraded/maintenance state
 
-### 7. Webhooks/events
+### 8. Webhooks/events
 
 Show:
 - subscriptions/endpoints
@@ -118,7 +154,7 @@ Show:
 
 Do not reveal signing secrets.
 
-### 8. Security and audit
+### 9. Security and audit
 
 Show:
 - authentication failures
@@ -129,10 +165,11 @@ Show:
 - capability denials
 - admin actions
 - reconciliation/replay actions
+- OpenBao auth/lease/rotation failures without exposing secrets
 
-### 9. Infrastructure
+### 10. Infrastructure
 
-Embed/link Grafana views for:
+Grafana operational views should cover:
 - Caddy
 - Kong
 - Keycloak
@@ -144,57 +181,42 @@ Embed/link Grafana views for:
 - Odoo
 - PostgreSQL
 - Redis
-- NATS
-- host/container health
+- host/container health via Node Exporter/cAdvisor
+- synthetic HTTPS/TLS/DNS checks via Blackbox Exporter
+- Alloy/OpenTelemetry collection health
+- Prometheus
+- Alertmanager
+- Loki
+- Tempo
+- OpenBao
+
+## Alertmanager dashboard behavior
+
+Canonical host: `aler.codestra.media`.
+
+Alertmanager views should expose operational state such as:
+- firing/resolved alerts
+- alert groups
+- grouping key
+- receiver
+- silence state
+- inhibition state
+- notification failures/retries
+- cluster health when deployed redundantly
+- `CodestraWatchdog` heartbeat path
+
+The dashboard must never expose receiver bearer tokens or webhook secret values.
 
 ## Technology split
 
 ### Grafana OSS
-Operational and incident dashboards. Fast time-series views, alert context, logs and traces.
+Operational and incident dashboards. Fast time-series views, alert context, logs, traces, deployment correlations and SLOs.
 
 ### Apache Superset
-Business analytics, tenant reporting, campaign/channel analysis, trends, cost/usage and management reporting.
+Business analytics, tenant reporting, campaign/channel analysis, trends, cost/usage, conversion and management reporting against governed read-only datasets.
 
 ### Custom Admin UI
 Controlled workflows requiring actions. The custom UI calls only governed APIs through Kong/Middleware.
-
-## Dashboard software map
-
-| Dashboard Need | Primary Tool | Supporting Repos |
-| --- | --- | --- |
-| Operational dashboards | Grafana | `Codestra-Grafana-`, `Codestra-Prometheus`, `Codestra-Loki`, `Codestra-Tempo` |
-| Metrics collection | Prometheus | `Codestra-Prometheus`, `Codestra-Node-Exporter`, `Codestra-cAdvisor`, `Codestra-Postgres-Exporter`, `Codestra-Redis-Exporter`, `Codestra-Blackbox-Exporter` |
-| Alert routing | Alertmanager | `Codestra-Alertmanager` |
-| Logs | Loki | `Codestra-Loki`, `Codestra-Alloy`, `Codestra-Telemetry` |
-| Traces | Tempo | `Codestra-Tempo`, `Codestra-Telemetry`, `Codestra-Alloy` |
-| Analytics/reporting | Superset | `Superset` |
-| Secrets and leases | OpenBao | `Codestra-OpenBao` |
-| Controlled actions | Custom admin UI | Product/dashboard repo TBD, calling Kong -> Middleware only |
-
-## Required Grafana folders
-
-- Platform Overview
-- Communications Overview
-- Email and Deliverability
-- SMS and DLR
-- Voice and Contact Center
-- Middleware Commands and Reconciliation
-- Provider Health
-- Webhooks and Events
-- Security and Audit
-- Infrastructure
-- Staging and Production Gates
-
-## Required Superset subject areas
-
-- tenant communications usage
-- campaign performance
-- channel/provider quality
-- deliverability trends
-- cost and margin analytics
-- SLA attainment
-- opt-out, consent and suppression trends
-- product/customer communications volume
 
 ## RBAC
 
@@ -202,17 +224,17 @@ Roles should include at minimum:
 - platform_admin
 - security_operator
 - communications_operator
+- business_owner
 - tenant_admin
 - support
 - analyst
 - read_only
 
-Tenant users must only see their own tenant data. Provider credentials and infrastructure secrets are never displayed.
+Tenant users must only see their own tenant data. Provider credentials, API keys and infrastructure secrets are never displayed.
 
-## Dashboard API requirements
+## Dashboard API/read-model requirements
 
-Read endpoints should support efficient pagination, time windows and filters:
-
+Read endpoints should support efficient pagination, time windows and filters. The architecture catalogue includes targets such as:
 - GET /v1/communications/overview
 - GET /v1/communications/messages
 - GET /v1/communications/messages/{id}
@@ -226,8 +248,8 @@ Read endpoints should support efficient pagination, time windows and filters:
 - GET /v1/communications/webhooks/health
 - GET /v1/communications/reconciliation
 
-Exact public/private ownership must be finalized in SDK and Middleware contracts.
+These architecture targets are not proof that every endpoint is already implemented. Runtime/public ownership must be proven in SDK/Middleware/provider repositories before release.
 
 ## Non-negotiable rule
 
-Dashboards may observe broadly according to RBAC, but effectful actions must never directly call Postal, Jasmin, Asterisk/VICIdial, databases or provider APIs. All privileged actions go through Kong -> Middleware -> owning adapter/runtime.
+Dashboards may observe broadly according to RBAC, but effectful actions must never directly call Postal, Jasmin, Asterisk/VICIdial, databases, provider APIs, Alertmanager receivers or external notification providers. All privileged actions go through Kong -> Middleware -> owning adapter/runtime.
