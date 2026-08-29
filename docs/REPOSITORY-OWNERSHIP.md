@@ -24,6 +24,14 @@ Every component with a dedicated repository keeps that repository as its princip
 | Loki | appolon1908-hue/Codestra-Loki | Loki runtime/configuration, ingestion/storage/retention policy, log tenancy, Loki-specific tests and release evidence | application log instrumentation or Grafana dashboard ownership |
 | OpenTelemetry | appolon1908-hue/Codestra-Telemetry | OpenTelemetry Collector pipelines, receivers/processors/exporters, telemetry propagation conventions, collector tests and release evidence | authoritative application state or backend-specific dashboards |
 | Tempo | appolon1908-hue/Codestra-Tempo | Tempo runtime/configuration, trace ingestion/storage/retention, Tempo-specific tests and release evidence | application instrumentation or metrics/log storage |
+| Superset | appolon1908-hue/Superset | Analytics dashboards, curated dataset definitions, semantic reporting, management reports and Superset release evidence | privileged provider/admin queries or operational alert ownership |
+| Node Exporter | appolon1908-hue/Codestra-Node-Exporter | Host metrics exporter configuration, service definitions and release evidence | application metrics or dashboard ownership |
+| cAdvisor | appolon1908-hue/Codestra-cAdvisor | Container metrics exporter configuration and release evidence | application metrics or dashboard ownership |
+| PostgreSQL Exporter | appolon1908-hue/Codestra-Postgres-Exporter | PostgreSQL exporter configuration and database metric collection policy | database schema ownership or privileged query dashboards |
+| Redis Exporter | appolon1908-hue/Codestra-Redis-Exporter | Redis exporter configuration and metric collection policy | Redis runtime configuration or dashboard ownership |
+| Blackbox Exporter | appolon1908-hue/Codestra-Blackbox-Exporter | Synthetic probe configuration and external endpoint checks | application routing, DNS authority or provider writes |
+| Grafana Alloy | appolon1908-hue/Codestra-Alloy | Local telemetry collection agent configuration for logs, metrics and traces | canonical metric storage or dashboard ownership |
+| OpenBao | appolon1908-hue/Codestra-OpenBao | Secrets, leases, policies, audit telemetry and secret-store release evidence | application business state or committed secret values |
 
 ## Canonical effect path
 

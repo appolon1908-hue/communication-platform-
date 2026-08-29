@@ -4,7 +4,7 @@
 
 This document defines the supporting software for the Codestra communications platform. Each observability component now has its own principal GitHub repository. `communication-platform-` owns architecture and information design; `Infustruction-repo` coordinates shared topology/deployment relationships; the dedicated component repositories own their own runtime/configuration source.
 
-## Principal observability repositories
+## Principal dashboard, observability, analytics and secrets repositories
 
 | Software | Principal repository | Principal responsibility |
 |---|---|---|
@@ -12,10 +12,20 @@ This document defines the supporting software for the Codestra communications pl
 | Prometheus | `appolon1908-hue/Codestra-Prometheus` | scrape configuration, TSDB/retention policy, recording/alert rules and Prometheus release evidence |
 | Alertmanager | `appolon1908-hue/Codestra-Alertmanager` | alert routing, grouping, inhibition, silencing policy and non-secret receiver definitions |
 | Loki | `appolon1908-hue/Codestra-Loki` | Loki ingestion, tenancy, storage and retention configuration |
-| OpenTelemetry | `appolon1908-hue/Codestra-Telemetry` | OpenTelemetry Collector pipelines, receivers, processors, exporters and propagation conventions |
 | Tempo | `appolon1908-hue/Codestra-Tempo` | Tempo trace ingestion, storage, retention and query configuration |
+| OpenTelemetry | `appolon1908-hue/Codestra-Telemetry` | OpenTelemetry Collector pipelines, receivers, processors, exporters and propagation conventions |
+| Apache Superset | `appolon1908-hue/Superset` | analytics dashboards, datasets, semantic reporting, campaign/channel usage reporting and Superset release evidence |
+| Node Exporter | `appolon1908-hue/Codestra-Node-Exporter` | host metrics exporter configuration and release evidence |
+| cAdvisor | `appolon1908-hue/Codestra-cAdvisor` | container metrics exporter configuration and release evidence |
+| PostgreSQL Exporter | `appolon1908-hue/Codestra-Postgres-Exporter` | PostgreSQL metrics exporter configuration and release evidence |
+| Redis Exporter | `appolon1908-hue/Codestra-Redis-Exporter` | Redis metrics exporter configuration and release evidence |
+| Blackbox Exporter | `appolon1908-hue/Codestra-Blackbox-Exporter` | external probe/synthetic check configuration and release evidence |
+| Grafana Alloy | `appolon1908-hue/Codestra-Alloy` | telemetry/log/metric collection agent configuration and release evidence |
+| OpenBao | `appolon1908-hue/Codestra-OpenBao` | secrets, leases, secret access policy, audit telemetry and release evidence |
 
 These repositories remain independent release authorities. No central repository may silently replace their accepted configuration.
+
+Remote access review on 2026-08-29 confirmed every listed supporting repository except `appolon1908-hue/Codestra-Postgres-Exporter`, which was not reachable from this environment. Confirm whether that repository is private, renamed, or still needs to be created.
 
 ## Core observability stack
 
@@ -116,7 +126,7 @@ Privileged actions must flow through Kong -> Middleware. The dashboard must neve
 
 ## Additional supporting systems
 
-Node Exporter, cAdvisor, PostgreSQL exporters, Redis exporters and Blackbox Exporter may remain deployment components coordinated through infrastructure unless/until each receives its own principal repository.
+Node Exporter, cAdvisor, PostgreSQL Exporter, Redis Exporter, Blackbox Exporter, Alloy and OpenBao now have dedicated principal repositories. Infrastructure may coordinate their deployment topology, but the component repositories own their source/configuration.
 
 ## Data ownership rule
 

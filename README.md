@@ -175,20 +175,26 @@ Grafana should be used for operational metrics where appropriate. Product/operat
 
 ## Required documentation set
 
+- `docs/MASTER-ARCHITECTURE-INDEX.md`
 - `docs/ARCHITECTURE.md`
 - `docs/REPOSITORY-OWNERSHIP.md`
-- `docs/API-BOUNDARY.md`
-- `docs/MESSAGE-LIFECYCLE.md`
+- `docs/CANONICAL-API-CATALOGUE.md`
 - `docs/EVENT-CATALOGUE.md`
+- `docs/STATUS-MODEL.md`
+- `docs/INTEGRATION-MATRIX.md`
+- `docs/DEPENDENCY-GRAPH.md`
 - `docs/EMAIL.md`
 - `docs/SMS.md`
 - `docs/VOICE.md`
 - `docs/CONSENT-SUPPRESSION.md`
 - `docs/REPUTATION-DELIVERABILITY.md`
 - `docs/DASHBOARD.md`
+- `docs/SOFTWARE-STACK.md`
 - `docs/SECURITY.md`
 - `docs/OBSERVABILITY.md`
 - `docs/RELEASE-PLAN.md`
+- `docs/CROSS-REPOSITORY-RELEASE-CHECKLIST.md`
+- `docs/MASTER-ARCHITECTURE-REVIEW.md`
 - `docs/CROSS-REPO-TEST-PLAN.md`
 - `docs/PRODUCTION-READINESS.md`
 

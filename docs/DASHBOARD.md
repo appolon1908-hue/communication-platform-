@@ -158,6 +158,44 @@ Business analytics, tenant reporting, campaign/channel analysis, trends, cost/us
 ### Custom Admin UI
 Controlled workflows requiring actions. The custom UI calls only governed APIs through Kong/Middleware.
 
+## Dashboard software map
+
+| Dashboard Need | Primary Tool | Supporting Repos |
+| --- | --- | --- |
+| Operational dashboards | Grafana | `Codestra-Grafana-`, `Codestra-Prometheus`, `Codestra-Loki`, `Codestra-Tempo` |
+| Metrics collection | Prometheus | `Codestra-Prometheus`, `Codestra-Node-Exporter`, `Codestra-cAdvisor`, `Codestra-Postgres-Exporter`, `Codestra-Redis-Exporter`, `Codestra-Blackbox-Exporter` |
+| Alert routing | Alertmanager | `Codestra-Alertmanager` |
+| Logs | Loki | `Codestra-Loki`, `Codestra-Alloy`, `Codestra-Telemetry` |
+| Traces | Tempo | `Codestra-Tempo`, `Codestra-Telemetry`, `Codestra-Alloy` |
+| Analytics/reporting | Superset | `Superset` |
+| Secrets and leases | OpenBao | `Codestra-OpenBao` |
+| Controlled actions | Custom admin UI | Product/dashboard repo TBD, calling Kong -> Middleware only |
+
+## Required Grafana folders
+
+- Platform Overview
+- Communications Overview
+- Email and Deliverability
+- SMS and DLR
+- Voice and Contact Center
+- Middleware Commands and Reconciliation
+- Provider Health
+- Webhooks and Events
+- Security and Audit
+- Infrastructure
+- Staging and Production Gates
+
+## Required Superset subject areas
+
+- tenant communications usage
+- campaign performance
+- channel/provider quality
+- deliverability trends
+- cost and margin analytics
+- SLA attainment
+- opt-out, consent and suppression trends
+- product/customer communications volume
+
 ## RBAC
 
 Roles should include at minimum:
