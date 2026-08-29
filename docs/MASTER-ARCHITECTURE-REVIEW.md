@@ -30,7 +30,7 @@ The `docs/master-architecture-v1` branch now contains the master architecture do
 | `appolon1908-hue/Superset` | reachable |
 | `appolon1908-hue/Codestra-Node-Exporter` | reachable |
 | `appolon1908-hue/Codestra-cAdvisor` | reachable |
-| `appolon1908-hue/Codestra-Postgres-Exporter` | not reachable from this environment; confirm private access or repository spelling |
+| `appolon1908-hue/Codestra-Postgres-Exporter` | reachable, public, empty/uninitialized; add initial source/configuration |
 | `appolon1908-hue/Codestra-Redis-Exporter` | reachable |
 | `appolon1908-hue/Codestra-Blackbox-Exporter` | reachable |
 | `appolon1908-hue/Codestra-Alloy` | reachable |
@@ -39,7 +39,7 @@ The `docs/master-architecture-v1` branch now contains the master architecture do
 ## Remaining Architecture Gaps
 
 - Add exact accepted SHAs once each observability repository has a release candidate.
-- Confirm whether `Codestra-Postgres-Exporter` is private, renamed, or missing.
+- Initialize `Codestra-Postgres-Exporter` with exporter configuration, README, validation, and release evidence.
 - Add dashboard JSON/provisioning details in `Codestra-Grafana-`.
 - Add Superset dataset/dashboard exports in `Superset`.
 - Add OpenBao policy and lease evidence in `Codestra-OpenBao`.

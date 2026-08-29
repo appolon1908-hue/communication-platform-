@@ -17,13 +17,13 @@ This document defines the supporting dashboard, observability, analytics and sec
 | Apache Superset | `appolon1908-hue/Superset` | read-only business/management analytics and reporting |
 | Node Exporter | `appolon1908-hue/Codestra-Node-Exporter` | host operating-system metrics |
 | cAdvisor | `appolon1908-hue/Codestra-cAdvisor` | container resource metrics |
-| PostgreSQL Exporter | desired `appolon1908-hue/Codestra-Postgres-Exporter` | read-only PostgreSQL metrics when repository is created/confirmed |
+| PostgreSQL Exporter | `appolon1908-hue/Codestra-Postgres-Exporter` | read-only PostgreSQL metrics; repository is public but still empty/uninitialized |
 | Redis Exporter | `appolon1908-hue/Codestra-Redis-Exporter` | read-only Redis metrics |
 | Blackbox Exporter | `appolon1908-hue/Codestra-Blackbox-Exporter` | synthetic HTTP/TCP/DNS/TLS probes |
 | Grafana Alloy | `appolon1908-hue/Codestra-Alloy` | host/container log and telemetry collection agent profiles |
 | OpenBao | `appolon1908-hue/Codestra-OpenBao` | runtime secrets, dynamic credentials, PKI/leases/rotation policy |
 
-The connected GitHub inventory still does not show `Codestra-Postgres-Exporter`; architecture reserves the ownership boundary but does not treat the repository/runtime as existing.
+Remote access review on 2026-08-29 confirmed `appolon1908-hue/Codestra-Postgres-Exporter` is public but empty/uninitialized, so it still needs initial source, configuration, validation and release evidence before it is treated as an active runtime/configuration authority.
 
 ## Canonical telemetry path
 
