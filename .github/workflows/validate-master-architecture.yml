@@ -1,0 +1,30 @@
+name: Validate master architecture
+
+on:
+  pull_request:
+    paths:
+      - 'docs/**'
+      - 'scripts/validate-master-architecture.py'
+      - '.github/workflows/validate-master-architecture.yml'
+  push:
+    branches:
+      - main
+      - development
+      - staging
+    paths:
+      - 'docs/**'
+      - 'scripts/validate-master-architecture.py'
+      - '.github/workflows/validate-master-architecture.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compile validator
+        run: python3 -m py_compile scripts/validate-master-architecture.py
+      - name: Validate master architecture authority
+        run: python3 scripts/validate-master-architecture.py
