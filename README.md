@@ -2,6 +2,8 @@
 
 This repository is the **communications-platform architecture and coordination authority** for Codestra. It defines the unified product model, channel contracts, cross-repository ownership map, integration rules, release sequencing, dashboards, and operator/developer experience for email, SMS, voice, webhooks and related communications capabilities.
 
+The repository-only observability alert boundary is defined in [`docs/OBSERVABILITY-ALERT-DELIVERY-BOUNDARY.md`](docs/OBSERVABILITY-ALERT-DELIVERY-BOUNDARY.md). Alertmanager may reach providers only through Middleware's durable governed adapter path; direct SMTP and provider delivery remain disabled.
+
 It is intentionally **not** a second runtime implementation of systems that already have principal repositories.
 
 ## Principal runtime authorities

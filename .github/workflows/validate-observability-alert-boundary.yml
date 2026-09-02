@@ -1,0 +1,67 @@
+name: Validate observability alert communication boundary
+
+on:
+  pull_request:
+    paths:
+      - contracts/observability-alert-delivery.v1.json
+      - docs/OBSERVABILITY-ALERT-DELIVERY-BOUNDARY.md
+      - release/observability-alert-boundary.sha256
+      - scripts/validate_observability_alert_boundary.py
+      - tests/test_observability_alert_boundary.py
+      - .github/workflows/validate-observability-alert-boundary.yml
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  validate-source:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.13'
+      - run: test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha }}"
+      - run: python3 scripts/validate_observability_alert_boundary.py --check
+      - run: python3 -m unittest discover -s tests -p 'test_*.py' -v
+      - name: Reject whitespace errors in the proposed committed range
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: git diff --check "$BASE_SHA" "$HEAD_SHA"
+
+  validate-merge-result:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.13'
+      - run: test "$(git rev-parse HEAD)" = "${{ github.sha }}"
+      - run: python3 scripts/validate_observability_alert_boundary.py --check
+      - run: python3 -m unittest discover -s tests -p 'test_*.py' -v
+      - name: Reject whitespace errors in the merge or push range
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PUSH_BASE_SHA: ${{ github.event.before }}
+        run: |
+          set -Eeuo pipefail
+          if [[ "$EVENT_NAME" == pull_request ]]; then
+            base_sha="$PR_BASE_SHA"
+          elif [[ "$PUSH_BASE_SHA" =~ ^[0-9a-f]{40}$ && "$PUSH_BASE_SHA" != 0000000000000000000000000000000000000000 ]]; then
+            base_sha="$PUSH_BASE_SHA"
+          else
+            base_sha="$(git rev-parse HEAD^)"
+          fi
+          git diff --check "$base_sha" "$GITHUB_SHA"
