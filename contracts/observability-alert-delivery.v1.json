@@ -1,0 +1,44 @@
+{
+  "schemaVersion": "1.0",
+  "contractId": "codestra-observability-alert-delivery-v1",
+  "principalRepository": "appolon1908-hue/communication-platform-",
+  "source": {
+    "service": "alertmanager",
+    "directProviderDeliveryAllowed": false,
+    "directSmtpAllowed": false,
+    "providerCredentialsAllowed": false
+  },
+  "middleware": {
+    "repository": "appolon1908-hue/Middleware-",
+    "protectedMergeSha": "65b8e511a412c4ba922876e906f95b9f2e4277a1",
+    "ingestionPath": "/v1/integrations/alertmanager/events",
+    "privateTlsRequired": true,
+    "fileCredentialOrWorkloadIdentityRequired": true,
+    "durableIncidentLedgerRequired": true,
+    "durableOutboxRequired": true,
+    "idempotencyRequired": true,
+    "providerAmbiguityRequiresReconciliation": true
+  },
+  "delivery": {
+    "adapter": "klyrow-alert-email",
+    "providerAuthorityRepository": "appolon1908-hue/klyrow.com",
+    "middlewareOnly": true,
+    "synchronousProviderCallDuringIngestionAllowed": false
+  },
+  "recipientPolicy": {
+    "policyId": "codestra-observability-initial-admin-v1",
+    "allowedRecipients": [
+      "appolon@codestra.co"
+    ],
+    "callerSuppliedRecipientsAllowed": false,
+    "tenantSuppliedRecipientsAllowed": false,
+    "deliveryEnabledByDefault": false
+  },
+  "activation": {
+    "repositoryOnly": true,
+    "externalDeliveryAuthorized": false,
+    "smtpConnectionAuthorized": false,
+    "providerApiCallAuthorized": false,
+    "productionCanaryAuthorized": false
+  }
+}

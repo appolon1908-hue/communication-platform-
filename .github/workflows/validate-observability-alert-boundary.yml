@@ -1,0 +1,48 @@
+name: Validate observability alert communication boundary
+
+on:
+  pull_request:
+    paths:
+      - contracts/observability-alert-delivery.v1.json
+      - docs/OBSERVABILITY-ALERT-DELIVERY-BOUNDARY.md
+      - release/observability-alert-boundary.sha256
+      - scripts/validate_observability_alert_boundary.py
+      - tests/test_observability_alert_boundary.py
+      - .github/workflows/validate-observability-alert-boundary.yml
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  validate-source:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.13'
+      - run: test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha }}"
+      - run: python3 scripts/validate_observability_alert_boundary.py --check
+      - run: python3 -m unittest discover -s tests -p 'test_*.py' -v
+      - run: git diff --check
+
+  validate-merge-result:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.13'
+      - run: test "$(git rev-parse HEAD)" = "${{ github.sha }}"
+      - run: python3 scripts/validate_observability_alert_boundary.py --check
+      - run: python3 -m unittest discover -s tests -p 'test_*.py' -v
+      - run: git diff --check
