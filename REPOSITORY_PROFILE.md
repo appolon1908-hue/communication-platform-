@@ -41,7 +41,7 @@ Defines the provider-neutral communications product model, ownership map, API bo
 
 ## Governance and safety
 
-- Promotion model: `feature/docs/fix/security/upgrade -> development -> test -> staging -> production -> main`.
+- Source promotion: reviewed pull request -> protected `main` -> immutable source release. Runtime repositories own their separately gated staging and production promotions; environments are not a reverse path into this architecture source authority.
 - Architecture and contracts must point to exact principal repository authorities and never duplicate their runtime code.
 - Never commit provider credentials, customer payloads, private keys, database dumps, or secret-bearing evidence.
 - Merge is coordination acceptance only; all live provider effects remain separately approved.
