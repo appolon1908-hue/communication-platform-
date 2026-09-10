@@ -97,7 +97,7 @@ The dashboard consumes governed read APIs/events from Middleware and approved pr
 
 Grafana is the operational visualization authority and should consume Prometheus/Loki/Tempo/OpenTelemetry-backed telemetry. Superset may consume curated analytics/read models for BI. The purpose-built admin dashboard consumes governed API read models.
 
-Recommended common dimensions: `environment`, `service`, `tenant`, `channel`, `provider`, `status`, `error_class`, `correlation_id` where cardinality is safe.
+Metric labels use bounded dimensions such as `environment`, `service`, `channel`, `provider`, `status`, and `error_class`. Tenant identifiers and correlation IDs belong in access-controlled read models, structured logs, or traces, not metric labels; aggregate tenant scope must remain bounded.
 
 ## Action boundary
 
