@@ -39,11 +39,8 @@
   "completion_evidence_required": [
     "exact_commit_ci",
     "approved_release",
-    "registered_service_units",
-    "fresh_telemetry",
-    "endpoint_contract_digest",
-    "private_authentication",
-    "alert_delivery",
-    "restore_and_rollback"
+    "versioned_contract_digest",
+    "dependency_compatibility_evidence",
+    "ownership_and_release_coordination"
   ]
 }
